@@ -10,6 +10,8 @@ mkdir build
 cd build
 cmake ..
 make 
+```
+```
 
 
 for windows you have to figure it on your own
