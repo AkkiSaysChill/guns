@@ -1,5 +1,6 @@
 #include "characters.h"
 #include "guns.h"
+#include "powerUp.h"
 #include <imgui.h>
 #include <raylib.h>
 #include <rlImGui.h>
@@ -39,13 +40,20 @@ int main() {
 
   CharacterManager character_manager;
 
-  // particle
+  // power up
+  powerUp powerup;
 
   // gun related stuff
   GunManager gun_manager;
   std::vector<gun> guns = gun_manager.guns;
 
   rlImGuiSetup(true);
+
+  powerup.spawnPowerUp(GetRandomValue(0, GetScreenWidth() - 50),
+                       GetRandomValue(0, GetScreenHeight() - 50), 50,
+                       GetRandomValue(0, 1)); // Random powerup type
+
+  float gameTick = 0.0f;
 
   while (!WindowShouldClose()) {
     BeginDrawing();
@@ -61,6 +69,25 @@ int main() {
     gun_manager.DrawGun();
     gun_manager.UpdateBullets();
     gun_manager.DrawBullets();
+    powerup.DrawPowerUps();
+    powerup.UpdatePowerUps();
+    powerup.CkeckCollisionWithPlayer(character_manager.player.position, 50,
+                                     &character_manager);
+
+    // make powerup spawn at random intervals
+
+    float nextSpawnTime = GetRandomValue(15, 30);
+
+    gameTick += GetFrameTime();
+
+    if (gameTick >= nextSpawnTime) {
+      powerup.spawnPowerUp(GetRandomValue(0, GetScreenWidth() - 50),
+                           GetRandomValue(0, GetScreenHeight() - 50), 50,
+                           GetRandomValue(0, 2)); // Random powerup type
+
+      gameTick = 0.0f;
+      nextSpawnTime = GetRandomValue(3, 7); // Set a new random interval
+    }
 
     std::string score = std::to_string(character_manager.player.score);
 

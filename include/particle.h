@@ -3,7 +3,7 @@
 #include <raylib.h>
 #include <vector>
 
-enum ParticleType { EXPLOSION, SMOKE, FIRE };
+enum ParticleType { EXPLOSION, SMOKE, FIRE, BLOOD };
 
 struct particle_t {
   Vector2 position;

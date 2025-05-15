@@ -129,6 +129,21 @@ void CharacterManager::CheckBulletEnemyCollision(GunManager *gun_manager) {
 
   player.score += killed;
 
+  if (killed > 0) {
+    for (const auto &e : enemies) {
+      if (e.health <= 0) {
+        // Spawn multiple particles at each dead enemy's position
+        int count = GetRandomValue(3, 6); // You can adjust how many per enemy
+        for (int i = 0; i < count; ++i) {
+          particle.spawnParticle(e.position.x, e.position.y,
+                                 GetRandomValue(10, 15), 100, BLOOD);
+          particle.spawnParticle(player.position.x, player.position.y,
+                                 GetRandomValue(10, 15), 100, EXPLOSION);
+        }
+      }
+    }
+  }
+
   // Clean up dead enemies
   enemies.erase(
       std::remove_if(enemies.begin(), enemies.end(),
@@ -185,7 +200,6 @@ void CharacterManager::UpdateEnemy(GunManager *gun_manager) {
       Rectangle playerRect = {player.position.x, player.position.y, 50, 50};
 
       if (CheckCollisionRecs(bulletRect, playerRect)) {
-        TraceLog(LOG_INFO, "Bullet hit player! Damage: %d", bullet.damage);
         if (player.armor > 0) {
           player.armor -= bullet.damage; // Damage armor first
         } else {

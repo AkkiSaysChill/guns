@@ -19,6 +19,9 @@ void Particle::spawnParticle(float x, float y, float size, float speed,
     newParticle.color = GRAY;
   } else if (type == FIRE) {
     newParticle.color = RED;
+
+  } else if (type == BLOOD) {
+    newParticle.color = RED;
   } else {
     newParticle.color = WHITE; // Default to white
   }
