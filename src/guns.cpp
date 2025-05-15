@@ -1,31 +1,64 @@
 #include "guns.h"
 #include <algorithm>
+#include <cmath>
 #include <raylib.h>
-
-// BUG: sniper grenade_launcher rocket_launcher bullets not drawing
-// TODO: make GUN_GRENADE_LAUNCHER and rocket_launcher bullets explode and
-// damage enemy in radius of 15
-//
+#include <raymath.h>
+// #include <string>
 
 GunManager::GunManager() {
-  // Initialize the gun list with some default guns
   max_guns = 3;
-  selected_gun_index = 0; // Initialize selected gun index
+  selected_gun_index = 0;
 
-  gun pistol = {GUN_PISTOL, "Pistol", 10, 15, 50, 1.5f, 0.5f, 15};
-  gun rifle = {GUN_RIFLE, "Rifle", 20, 30, 100, 2.0f, 0.1f, 30};
-  gun shotgun = {GUN_SHOTGUN, "Shotgun", 50, 8, 20, 1.0f, 0.5f, 8};
-  gun sniper = {GUN_SNIPER, "Sniper", 50, 5, 200, 3.0f, 0.2f, 5};
+  // Load individual textures
+  Texture2D pistolTex = LoadTexture("assets/Guns/Pistol.png");
+  Texture2D rifleTex = LoadTexture("assets/Guns/rifle.png");
+  Texture2D shotgunTex = LoadTexture("assets/Guns/shotgun.png");
+  Texture2D sniperTex = LoadTexture("assets/Guns/sniper.png");
+  Texture2D smgTex = LoadTexture("assets/Guns/SMG.png");
+  Texture2D assaultRifleTex = LoadTexture("assets/Guns/AR.png");
+  Texture2D lmgTex = LoadTexture("assets/Guns/lmg.png");
+  Texture2D grenadeLauncherTex =
+      LoadTexture("assets/Guns/grenade_launcher.png");
+  Texture2D rocketLauncherTex = LoadTexture("assets/Guns/RocketLauncher.png");
+
+  // Add guns with separate textures
+  gun pistol = {GUN_PISTOL, pistolTex, "Pistol", 10, 15, 50, 1.5f, 0.5f, 15};
+  gun rifle = {GUN_RIFLE, rifleTex, "Rifle", 20, 30, 100, 2.0f, 0.1f, 30};
+  gun shotgun = {GUN_SHOTGUN, shotgunTex, "Shotgun", 50, 8, 20, 1.0f, 0.5f, 8};
+  gun sniper = {GUN_SNIPER, sniperTex, "Sniper", 50, 5, 200, 3.0f, 0.2f, 5};
   gun submachinegun = {
-      GUN_SUBMACHINEGUN, "Submachine Gun", 15, 30, 50, 0.5f, 0.1f, 30};
-  gun assault_rifle = {
-      GUN_ASSAULT_RIFLE, "Assault Rifle", 25, 30, 100, 2.0f, 0.1f, 30};
-  gun lmg = {GUN_LMG, "Light Machine Gun", 20, 100, 200, 3.0f, 0.1f, 100};
-  gun grenade_launcher = {
-      GUN_GRENADE_LAUNCHER, "Grenade Launcher", 40, 5, 50, 2.0f, 0.5f, 5};
-  gun rocket_launcher = {
-      GUN_ROCKET_LAUNCHER, "Rocket Launcher", 100, 1, 500, 5.0f, 1.0f, 1};
+      GUN_SUBMACHINEGUN, smgTex, "Submachine Gun", 15, 30, 50, 0.5f, 0.1f, 30};
+  gun assault_rifle = {GUN_ASSAULT_RIFLE,
+                       assaultRifleTex,
+                       "Assault Rifle",
+                       25,
+                       30,
+                       100,
+                       2.0f,
+                       0.1f,
+                       30};
+  gun lmg = {GUN_LMG, lmgTex, "Light Machine Gun", 20, 100, 200, 3.0f,
+             0.1f,    100};
+  gun grenade_launcher = {GUN_GRENADE_LAUNCHER,
+                          grenadeLauncherTex,
+                          "Grenade Launcher",
+                          40,
+                          5,
+                          50,
+                          2.0f,
+                          0.5f,
+                          5};
+  gun rocket_launcher = {GUN_ROCKET_LAUNCHER,
+                         rocketLauncherTex,
+                         "Rocket Launcher",
+                         100,
+                         1,
+                         500,
+                         5.0f,
+                         1.0f,
+                         1};
 
+  // Add all to the list
   guns.push_back(pistol);
   guns.push_back(rifle);
   guns.push_back(shotgun);
@@ -42,62 +75,97 @@ GunManager::~GunManager() {
   guns.clear();
 }
 
-void GunManager::DrawGun() {
-  // Draw the currently selected gun
+void GunManager::DrawGun(Vector2 playerPos, std::vector<Vector2> enemyPositions,
+                         std::vector<int> enemy_gun_ids) {
   if (guns.empty())
     return;
 
   gun &current = guns[selected_gun_index];
+
+  Vector2 gunOffset = {20, 10}; // tweak based on character sprite size
+  Vector2 gunPos = {playerPos.x + gunOffset.x, playerPos.y + gunOffset.y};
+
+  Vector2 aimDir = Vector2Subtract(GetMousePosition(), playerPos);
+  float angle = atan2f(aimDir.y, aimDir.x) * RAD2DEG;
+
+  DrawTextureEx(current.texture, gunPos, angle, 1.0f, WHITE);
+
+  // DrawText(std::to_string(selected_gun_index).c_str(), 100, 100, 32, RED);
+
+  // draw gun for enemies
+
+  for (size_t i = 0; i < enemyPositions.size(); i++) {
+    Vector2 enemyGunPos = {enemyPositions[i].x + gunOffset.x,
+                           enemyPositions[i].y + gunOffset.y};
+
+    // Calculate direction from enemy to player
+    Vector2 dirToPlayer = Vector2Subtract(playerPos, enemyPositions[i]);
+    float enemyAngle = atan2f(dirToPlayer.y, dirToPlayer.x) * RAD2DEG;
+
+    int gunId = enemy_gun_ids[i];
+    if (gunId >= 0 && gunId < guns.size()) {
+      DrawTextureEx(guns[gunId].texture, enemyGunPos, enemyAngle, 1.0f, WHITE);
+    }
+  }
   DrawText(current.name, 10, GetScreenHeight() - 30, 20, DARKGRAY);
 }
 
 void GunManager::ShootGun(Vector2 position, Vector2 direction) {
-  // Check if there are too many bullets on screen already
-  if (bullets.size() >= guns[selected_gun_index].ammo_capacity *
-                            2) { // Increased capacity for enemy bullets
+  if (bullets.size() >= guns[selected_gun_index].ammo_capacity * 2) {
     return;
   }
 
   Bullet bullet;
   bullet.Position = position;
-  bullet.speed = {direction.x * 10, direction.y * 10};
+
+  float speedMultiplier = 10;
+
+  bullet.speed = {direction.x * speedMultiplier, direction.y * speedMultiplier};
   bullet.damage = guns[selected_gun_index].damage;
   bullet.active = true;
-  bullet.isPlayerBullet = false; // Mark as enemy bullet
+  bullet.isPlayerBullet = false;
+  bullet.gun_id = selected_gun_index;
+
   bullets.push_back(bullet);
 }
 
 void GunManager::ShootFromPlayer(Vector2 position, Vector2 direction) {
-  if (bullets.size() >= guns[selected_gun_index].ammo_capacity *
-                            2) { // Increased capacity for consistency
+  if (bullets.size() >= guns[selected_gun_index].ammo_capacity * 2) {
     return;
   }
 
+  Vector2 gunOffset = {20, 10};
+  Vector2 gunPos = Vector2Add(position, gunOffset);
+
   Bullet bullet;
-  bullet.Position = position;
-  bullet.speed = {direction.x * 10, direction.y * 10};
+  bullet.Position = gunPos;
+
+  float speedMultiplier = 10;
+
+  bullet.speed = {direction.x * speedMultiplier, direction.y * speedMultiplier};
   bullet.damage = guns[selected_gun_index].damage;
   bullet.active = true;
-  bullet.isPlayerBullet = true; // Mark as player bullet
+  bullet.isPlayerBullet = true;
+  bullet.gun_id = selected_gun_index;
+
   bullets.push_back(bullet);
 }
 
-// TODO: add collision detection for bullets
-// the logic should be if the bullet is a player bullet and it hits an enemy,
-// enemy gets damage if the bullets are of enemy and it hits the player, player
-// gets damage and bullet is deactivated
-
 void GunManager::UpdateBullets() {
+  float screenWidth = (float)GetScreenWidth();
+  float screenHeight = (float)GetScreenHeight();
+
   for (auto &bullet : bullets) {
     if (!bullet.active)
       continue;
 
-    bullet.Position.x += bullet.speed.x;
-    bullet.Position.y += bullet.speed.y;
+    bullet.Position = Vector2Add(bullet.Position, bullet.speed);
 
-    // Deactivate bullets if they go off-screen
-    if (bullet.Position.x < 0 || bullet.Position.x > GetScreenWidth() ||
-        bullet.Position.y < 0 || bullet.Position.y > GetScreenHeight()) {
+    // Deactivate if out of screen bounds (plus radius buffer)
+    if (bullet.Position.x < -bullet.radius ||
+        bullet.Position.x > screenWidth + bullet.radius ||
+        bullet.Position.y < -bullet.radius ||
+        bullet.Position.y > screenHeight + bullet.radius) {
       bullet.active = false;
     }
   }
@@ -113,8 +181,8 @@ void GunManager::DrawBullets() {
     if (!bullet.active)
       continue;
 
-    // Draw player bullets in blue, enemy bullets in red
     Color bulletColor = bullet.isPlayerBullet ? BLUE : RED;
+
     DrawCircleV(bullet.Position, 5, bulletColor);
   }
 }

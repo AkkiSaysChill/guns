@@ -2,6 +2,7 @@
 
 #include "guns.h"
 #include "particle.h"
+#include "throwables.h"
 #include <raylib.h>
 #include <vector>
 
@@ -24,6 +25,9 @@ public:
   float currentReloadTimer;
 
   Particle particle;
+  throwables_manager thm;
+
+  int next_id = 0;
 
   character player;
   character enemy;

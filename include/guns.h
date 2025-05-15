@@ -17,7 +17,7 @@ enum gun_id {
 
 struct gun {
   gun_id id;
-
+  Texture2D texture; // Texture for the gun
   char name[32];
   int damage;
   int ammo_capacity;
@@ -33,6 +33,9 @@ struct Bullet {
   int damage;       // Damage dealt by the bullet
   bool active;      // Is the bullet currently active?
   bool isPlayerBullet;
+  Texture2D bullet_texture; // Texture for the bullet
+  int gun_id;
+  float radius; // Radius of the bullet
 };
 
 class GunManager {
@@ -45,7 +48,8 @@ public:
   int max_guns;
   int selected_gun_index = 0;
 
-  void DrawGun();
+  void DrawGun(Vector2 playerPos, std::vector<Vector2> enemyPositions,
+               std::vector<int> enemy_gun_ids);
   void ShootGun(Vector2 position, Vector2 direction);
   void ShootFromPlayer(Vector2 position, Vector2 direction);
   void DrawBullets();

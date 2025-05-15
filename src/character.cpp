@@ -1,5 +1,7 @@
 #include "characters.h"
+#include "guns.h"
 #include "particle.h"
+#include "throwables.h"
 #include <algorithm>
 #include <raylib.h>
 #include <raymath.h>
@@ -49,12 +51,21 @@ void CharacterManager::UpdatePlayer(GunManager *gun_manager) {
   if (player.position.y > GetScreenHeight() - 50)
     player.position.y = GetScreenHeight() - 50;
 
+  // thow throwables
+  // this shit is hard ngl
+  if (IsKeyPressed(KEY_T)) {
+    thm.add_throwable(next_id++, THROWABLE_TYPE_GRENADE, player.position,
+                      GetMousePosition(), 50, 120);
+  }
+
   // Shoot bullet if space is pressed and cooldown has passed
   static float shootCooldown = 0.0f;
   if (shootCooldown > 0.0f)
     shootCooldown -= GetFrameTime();
 
   particle.UpdateParticles(GetFrameTime());
+  thm.update_throwables();
+  thm.draw_throwables();
 
   if (IsKeyDown(KEY_SPACE) && shootCooldown <= 0.0f &&
       gun_manager->guns[gun_manager->selected_gun_index].ammo > 0 &&
@@ -107,6 +118,8 @@ void CharacterManager::UpdatePlayer(GunManager *gun_manager) {
 }
 
 void CharacterManager::CheckBulletEnemyCollision(GunManager *gun_manager) {
+  std::vector<character> killedEnemies; // Store enemies killed this frame
+
   for (auto &bullet : gun_manager->bullets) {
     if (!bullet.active || !bullet.isPlayerBullet)
       continue;
@@ -119,27 +132,27 @@ void CharacterManager::CheckBulletEnemyCollision(GunManager *gun_manager) {
       if (CheckCollisionRecs(bulletRect, enemyRect)) {
         enemy.health -= bullet.damage;
         bullet.active = false;
+
+        if (enemy.health <= 0) {
+          killedEnemies.push_back(enemy);
+        }
+
         break;
       }
     }
   }
 
-  int killed = std::count_if(enemies.begin(), enemies.end(),
-                             [](const character &e) { return e.health <= 0; });
+  player.score += static_cast<int>(killedEnemies.size());
 
-  player.score += killed;
+  for (const auto &e : killedEnemies) {
+    int count = GetRandomValue(3, 6);
+    for (int i = 0; i < count; ++i) {
+      particle.spawnParticle(e.position.x, e.position.y, GetRandomValue(10, 15),
+                             100, BLOOD);
 
-  if (killed > 0) {
-    for (const auto &e : enemies) {
-      if (e.health <= 0) {
-        // Spawn multiple particles at each dead enemy's position
-        int count = GetRandomValue(3, 6); // You can adjust how many per enemy
-        for (int i = 0; i < count; ++i) {
-          particle.spawnParticle(e.position.x, e.position.y,
-                                 GetRandomValue(10, 15), 100, BLOOD);
-          particle.spawnParticle(player.position.x, player.position.y,
-                                 GetRandomValue(10, 15), 100, EXPLOSION);
-        }
+      if (gun_manager->selected_gun_index == 8) {
+        particle.spawnParticle(e.position.x, e.position.y,
+                               GetRandomValue(10, 15), 100, EXPLOSION);
       }
     }
   }
@@ -280,7 +293,7 @@ void CharacterManager::spawnEnemies() {
     new_enemy.shootCooldown = 0.0f; // Initialize cooldown
 
     // Assign a random gun ID (0 to 8 inclusive)
-    new_enemy.current_gun_id = static_cast<gun_id>(GetRandomValue(0, 7));
+    new_enemy.current_gun_id = static_cast<gun_id>(GetRandomValue(0, 6));
 
     // Avoid spawning too close to player
     do {

@@ -45,6 +45,8 @@ int main() {
 
   // gun related stuff
   GunManager gun_manager;
+  int next_id = 0;
+
   std::vector<gun> guns = gun_manager.guns;
 
   rlImGuiSetup(true);
@@ -66,7 +68,22 @@ int main() {
 
     character_manager.CheckBulletEnemyCollision(&gun_manager);
 
-    gun_manager.DrawGun();
+    // gun_manager.DrawGun(character_manager.player.position,
+    // character_manager.enemies.begin()->position);
+
+    if (!character_manager.enemies.empty()) {
+      Vector2 playerPos = character_manager.player.position;
+
+      std::vector<Vector2> enemyPositions;
+      std::vector<int> enemy_gun_ids;
+      for (const auto &e : character_manager.enemies) {
+        enemyPositions.push_back(e.position);
+        enemy_gun_ids.push_back(e.current_gun_id);
+      }
+
+      gun_manager.DrawGun(playerPos, enemyPositions, enemy_gun_ids);
+    }
+
     gun_manager.UpdateBullets();
     gun_manager.DrawBullets();
     powerup.DrawPowerUps();
@@ -88,6 +105,9 @@ int main() {
       gameTick = 0.0f;
       nextSpawnTime = GetRandomValue(3, 7); // Set a new random interval
     }
+
+    Vector2 start = character_manager.player.position;
+    Vector2 target = GetMousePosition();
 
     std::string score = std::to_string(character_manager.player.score);
 
