@@ -15,6 +15,8 @@ CharacterManager::CharacterManager() {
   player.velocity = {0, 0};
   enemy_spawned = false; // Initialize enemy_spawned flag
   enemy_count = 5;       // Set default enemy count
+
+  mouseCursor = LoadTexture("assets/crossair.png");
 }
 
 CharacterManager::~CharacterManager() {
@@ -26,6 +28,8 @@ void CharacterManager::UpdatePlayer(GunManager *gun_manager) {
   Vector2 mouse_pos = GetMousePosition();
   Vector2 direction =
       Vector2Normalize(Vector2Subtract(mouse_pos, player.position));
+
+  DrawTexture(mouseCursor, mouse_pos.x - 128 / 2, mouse_pos.y - 128 / 2, BLACK);
 
   // Apply directional input (WASD)
   if (IsKeyDown(KEY_W))
@@ -41,6 +45,13 @@ void CharacterManager::UpdatePlayer(GunManager *gun_manager) {
   player.position.x += player.velocity.x;
   player.position.y += player.velocity.y;
 
+  // cap  players health and armor
+  //
+  if (player.armor < 0)
+    player.armor = 0;
+  if (player.health < 0)
+    player.health = 0;
+
   // Keep player within screen bounds
   if (player.position.x < 0)
     player.position.x = 0;
@@ -52,7 +63,6 @@ void CharacterManager::UpdatePlayer(GunManager *gun_manager) {
     player.position.y = GetScreenHeight() - 50;
 
   // thow throwables
-  // this shit is hard ngl
   if (IsKeyPressed(KEY_T)) {
     thm.add_throwable(next_id++, THROWABLE_TYPE_GRENADE, player.position,
                       GetMousePosition(), 50, 120);
@@ -64,8 +74,10 @@ void CharacterManager::UpdatePlayer(GunManager *gun_manager) {
     shootCooldown -= GetFrameTime();
 
   particle.UpdateParticles(GetFrameTime());
-  thm.update_throwables();
+  thm.update_throwables(&particle);
   thm.draw_throwables();
+  thm.draw_explosions();
+  CheckExplosionDamage(&thm);
 
   if (IsKeyDown(KEY_SPACE) && shootCooldown <= 0.0f &&
       gun_manager->guns[gun_manager->selected_gun_index].ammo > 0 &&
@@ -162,6 +174,27 @@ void CharacterManager::CheckBulletEnemyCollision(GunManager *gun_manager) {
       std::remove_if(enemies.begin(), enemies.end(),
                      [](const character &e) { return e.health <= 0; }),
       enemies.end());
+}
+
+void CharacterManager::CheckExplosionDamage(throwables_manager *thm) {
+  for (auto &explosion : thm->Explosions) {
+    if (explosion.didDamage)
+      continue;
+
+    float radius = explosion.damageRadius;
+
+    for (auto &enemy : enemies) {
+      float dx = enemy.position.x + 25 - explosion.x; // assuming enemy is 50x50
+      float dy = enemy.position.y + 25 - explosion.y;
+      float distSq = dx * dx + dy * dy;
+
+      if (distSq < radius * radius) {
+        enemy.health -= 150;
+      }
+    }
+
+    explosion.didDamage = true; // Only deal damage once per explosion
+  }
 }
 
 void CharacterManager::UpdateEnemy(GunManager *gun_manager) {

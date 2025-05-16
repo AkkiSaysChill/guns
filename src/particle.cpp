@@ -57,7 +57,13 @@ void Particle::UpdateParticles(float deltaTime) {
 
 void Particle::DrawParticles() {
   for (const auto &p : particle) {
-    DrawCircleV(p.position, p.size, p.color);
+    // Add small jitter (±1.5 px range)
+    float jitterX = GetRandomValue(-15, 15) / 10.0f; // -1.5 to +1.5
+    float jitterY = GetRandomValue(-15, 15) / 10.0f; // -1.5 to +1.5
+
+    Vector2 jitteredPos = {p.position.x + jitterX, p.position.y + jitterY};
+
+    DrawRectangleV(jitteredPos, {p.size, p.size}, p.color);
   }
 }
 

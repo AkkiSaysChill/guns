@@ -11,7 +11,7 @@ GunManager::GunManager() {
 
   // Load individual textures
   Texture2D pistolTex = LoadTexture("assets/Guns/Pistol.png");
-  Texture2D rifleTex = LoadTexture("assets/Guns/rifle.png");
+  Texture2D rifleTex = LoadTexture("assets/Guns/rifel.png");
   Texture2D shotgunTex = LoadTexture("assets/Guns/shotgun.png");
   Texture2D sniperTex = LoadTexture("assets/Guns/sniper.png");
   Texture2D smgTex = LoadTexture("assets/Guns/SMG.png");

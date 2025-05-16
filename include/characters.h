@@ -36,10 +36,13 @@ public:
   bool enemy_spawned = false;
 
   void CheckBulletEnemyCollision(GunManager *gun_manager);
+  void CheckExplosionDamage(throwables_manager *thm);
 
   void UpdatePlayer(GunManager *gun_manager);
   void UpdateEnemy(GunManager *gun_manager);
   void DrawPlayer();
   void DrawEnemy();
   void spawnEnemies();
+
+  Texture2D mouseCursor;
 };
